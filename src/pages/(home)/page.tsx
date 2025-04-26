@@ -1,57 +1,343 @@
-import { Button } from "@/components/ui/button";
-import { PencilIcon, PlayIcon, RefreshCcw, SquareIcon } from "lucide-react";
-import { Helmet } from "react-helmet-async";
+/* eslint-disable react-hooks/exhaustive-deps */
+import {
+  CheckIcon,
+  PencilIcon,
+  PlayIcon,
+  RefreshCcw,
+  SquareIcon,
+} from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Helmet } from 'react-helmet-async'
+
+import { cn } from '@/@config/lib/cn'
+import { Button } from '@/components/ui/button'
+
+const timeValue = 0
 
 export function Home() {
-  return <div className="flex bg-zinc-900 min-h-screen items-center justify-center overflow-hidden transition-all duration-1000">
-    <Helmet title="FINALIZOU SEU TEMPORIZER!" />
+  const countdownTimeout = useRef<NodeJS.Timeout | null>(null)
 
-    <div className="relative flex flex-col items-center">
-      {/* Logo */}
-      <img src="/logo.svg" alt="Logo Temporizer" className="pointer-events-none select-none visible absolute -top-20 w-60 opacity-100 transition-all duration-300 md:w-80" /> 
+  const [time, setTime] = useState(timeValue)
 
-      {/* Contador */}
-      <div className="flex select-none items-center font-orbitron text-[2.5rem] font-medium text-emerald-500 transition-all sm:text-[4rem] md:text-[6rem] lg:text-[8rem]">
-        <div className="visible relative bottom-0 flex items-center opacity-100 transition-all duration-500">
-          <div className="flex gap-1">
-            <input type="text" maxLength={1} value="0" className="w-[1.2ch] rounded-sm border-2 border-transparent bg-zinc-800 text-center font-orbitron outline-none"/>
-            <input type="text" maxLength={1} value="0" className="w-[1.2ch] rounded-sm border-2 border-transparent bg-zinc-800 text-center font-orbitron outline-none"/>
-          </div>
-          <span>:</span>
-          <div className="flex gap-1">
-            <input type="text" maxLength={1} value="0" className="w-[1.2ch] rounded-sm border-2 border-transparent bg-zinc-800 text-center font-orbitron outline-none"/>
-            <input type="text" maxLength={1} value="0" className="w-[1.2ch] rounded-sm border-2 border-transparent bg-zinc-800 text-center font-orbitron outline-none"/>
-          </div>
-          <span>:</span>
-          <div className="flex gap-1">
-            <input type="text" maxLength={1} value="0" className="w-[1.2ch] rounded-sm border-2 border-transparent bg-zinc-800 text-center font-orbitron outline-none"/>
-            <input type="text" maxLength={1} value="0" className="w-[1.2ch] rounded-sm border-2 border-transparent bg-zinc-800 text-center font-orbitron outline-none"/>
-          </div>
+  const [hasEdit, setHasEdit] = useState(false)
+  const [isActive, setIsActive] = useState(false)
+  const [hasFinished, setHasFinished] = useState(false)
+  const [hasPlayedCountdown, setHasPlayedCountdown] = useState(false)
+
+  const hours = Math.floor(time / 3600)
+  const minutes = Math.floor((time / 60) % 60)
+  const seconds = time % 60
+
+  const [hoursLeft, hoursRight] = String(hours).padStart(2, '0').split('')
+  const [minutesLeft, minutesRight] = String(minutes).padStart(2, '0').split('')
+  const [secondsLeft, secondsRight] = String(seconds).padStart(2, '0').split('')
+
+  const handleStartCountdown = () => {
+    setIsActive(true)
+  }
+
+  const handlePauseCountdown = () => {
+    setIsActive(false)
+
+    if (countdownTimeout.current) {
+      clearTimeout(countdownTimeout.current)
+    }
+  }
+
+  const handleResetCountdown = () => {
+    setIsActive(false)
+    setHasFinished(false)
+    setTime(timeValue)
+
+    if (countdownTimeout.current) {
+      clearTimeout(countdownTimeout.current)
+    }
+  }
+
+  const updateTimePart = (
+    part: 'hours' | 'minutes' | 'seconds',
+    left: string,
+    right: string,
+  ) => {
+    const h =
+      part === 'hours' ? Number(`${left}${right}`) : Math.floor(time / 3600)
+    const m =
+      part === 'minutes'
+        ? Number(`${left}${right}`)
+        : Math.floor((time / 60) % 60)
+    const s = part === 'seconds' ? Number(`${left}${right}`) : time % 60
+
+    const newTime = h * 3600 + m * 60 + s
+
+    setTime(newTime)
+  }
+
+  useEffect(() => {
+    if (isActive && time > 0) {
+      if (time === 10 && !hasPlayedCountdown) {
+        const countdownAudio = new Audio('/finishing.mp3')
+        countdownAudio.play()
+        setHasPlayedCountdown(true)
+      }
+
+      countdownTimeout.current = setTimeout(() => {
+        setTime((prevTime) => prevTime - 1)
+      }, 1000)
+    } else if (isActive && time === 0) {
+      setHasFinished(true)
+      setIsActive(false)
+      setHasPlayedCountdown(false)
+    }
+
+    return () => {
+      if (countdownTimeout.current) {
+        clearTimeout(countdownTimeout.current)
+      }
+    }
+  }, [isActive, time])
+
+  const hasTimeGreaterThanTen = !isActive || time > 10 || time === 0
+
+  return (
+    <div
+      className={cn(
+        'flex min-h-screen items-center justify-center overflow-hidden transition-all duration-1000',
+        hasFinished ? 'bg-emerald-600' : 'bg-zinc-900',
+      )}
+    >
+      <Helmet
+        title={`${hasFinished ? 'FINALIZOU SEU TEMPORIZER!' : `${hasTimeGreaterThanTen ? `${hoursLeft}${hoursRight}:${minutesLeft}${minutesRight}:${secondsLeft}${secondsRight}` : `${seconds} ${seconds === 1 ? 'segundo' : 'segundos'}`}`}`}
+      />
+
+      <div className="relative flex flex-col items-center">
+        {/* Logo */}
+        {!hasFinished && (
+          <img
+            src="/logo.svg"
+            alt="Logo Temporizer"
+            className={cn(
+              'pointer-events-none visible absolute -top-20 w-60 select-none opacity-100 transition-all duration-300 md:w-80',
+              !isActive ||
+                (!hasTimeGreaterThanTen &&
+                  !hasEdit &&
+                  'visible -top-72 opacity-0'),
+            )}
+          />
+        )}
+
+        {/* Contador */}
+        <div
+          className={cn(
+            'flex select-none items-center font-orbitron text-[2.5rem] font-medium text-emerald-500 transition-all sm:text-[4rem] md:text-[6rem] lg:text-[8rem]',
+            hasFinished && 'text-white',
+          )}
+        >
+          {!hasFinished ? (
+            <>
+              <div
+                className={cn(
+                  'visible relative bottom-0 flex items-center opacity-100 transition-all duration-500',
+                  !isActive ||
+                    (!hasTimeGreaterThanTen &&
+                      !hasEdit &&
+                      'invisible -bottom-72 !text-zinc-700 opacity-0'),
+                )}
+              >
+                <div className="flex gap-1">
+                  <input
+                    type="text"
+                    maxLength={1}
+                    value={hoursLeft}
+                    readOnly={!hasEdit}
+                    onChange={(e) =>
+                      updateTimePart('hours', e.target.value, hoursRight)
+                    }
+                    className={cn(
+                      'w-[1.2ch] rounded-sm border-2 border-transparent bg-zinc-800 text-center font-orbitron outline-none',
+                      hasEdit && 'border-emerald-500',
+                    )}
+                  />
+                  <input
+                    type="text"
+                    maxLength={1}
+                    value={hoursRight}
+                    readOnly={!hasEdit}
+                    onChange={(e) =>
+                      updateTimePart('hours', hoursLeft, e.target.value)
+                    }
+                    className={cn(
+                      'w-[1.2ch] rounded-sm border-2 border-transparent bg-zinc-800 text-center font-orbitron outline-none',
+                      hasEdit && 'border-emerald-500',
+                    )}
+                  />
+                </div>
+                <span>:</span>
+                <div className="flex gap-1">
+                  <input
+                    type="text"
+                    maxLength={1}
+                    readOnly={!hasEdit}
+                    value={minutesLeft}
+                    onChange={(e) =>
+                      updateTimePart('minutes', e.target.value, minutesRight)
+                    }
+                    className={cn(
+                      'w-[1.2ch] rounded-sm border-2 border-transparent bg-zinc-800 text-center font-orbitron outline-none',
+                      hasEdit && 'border-emerald-500',
+                    )}
+                  />
+                  <input
+                    type="text"
+                    maxLength={1}
+                    readOnly={!hasEdit}
+                    value={minutesRight}
+                    onChange={(e) =>
+                      updateTimePart('minutes', minutesLeft, e.target.value)
+                    }
+                    className={cn(
+                      'w-[1.2ch] rounded-sm border-2 border-transparent bg-zinc-800 text-center font-orbitron outline-none',
+                      hasEdit && 'border-emerald-500',
+                    )}
+                  />
+                </div>
+                <span>:</span>
+                <div className="flex gap-1">
+                  <input
+                    type="text"
+                    maxLength={1}
+                    readOnly={!hasEdit}
+                    onChange={(e) =>
+                      updateTimePart('seconds', e.target.value, secondsRight)
+                    }
+                    value={secondsLeft}
+                    className={cn(
+                      'w-[1.2ch] rounded-sm border-2 border-transparent bg-zinc-800 text-center font-orbitron outline-none',
+                      hasEdit && 'border-emerald-500',
+                    )}
+                  />
+                  <input
+                    type="text"
+                    maxLength={1}
+                    readOnly={!hasEdit}
+                    value={secondsRight}
+                    onChange={(e) =>
+                      updateTimePart('seconds', secondsLeft, e.target.value)
+                    }
+                    className={cn(
+                      'w-[1.2ch] rounded-sm border-2 border-transparent bg-zinc-800 text-center font-orbitron outline-none',
+                      hasEdit && 'border-emerald-500',
+                    )}
+                  />
+                </div>
+              </div>
+
+              <div
+                className={cn(
+                  'visible absolute bottom-0 left-1/2 -translate-x-1/2 opacity-100 transition-all duration-700',
+                  (!isActive || hasTimeGreaterThanTen || hasEdit) &&
+                    'invisible -bottom-40 opacity-0',
+                )}
+              >
+                <span>{seconds}</span>
+              </div>
+            </>
+          ) : (
+            <div>
+              <span>0</span>
+            </div>
+          )}
+        </div>
+
+        {/* Botões de ação */}
+        <div
+          className={cn(
+            'visible absolute -bottom-20 left-1/2 flex -translate-x-1/2 items-center gap-8 opacity-100 transition-all duration-500',
+            (hasEdit || !hasTimeGreaterThanTen) &&
+              'invisible -bottom-72 opacity-0',
+          )}
+        >
+          {!hasFinished && (
+            <Button
+              size="icon"
+              type="button"
+              variant="outline"
+              onClick={() => {
+                handlePauseCountdown()
+                setHasEdit(true)
+              }}
+              title="Clique para editar o contador"
+              className="rounded-full bg-transparent text-white"
+            >
+              <PencilIcon className="size-4" />
+              <span className="sr-only">Editar contador</span>
+            </Button>
+          )}
+
+          <Button
+            size="icon"
+            type="button"
+            variant="outline"
+            onClick={handleResetCountdown}
+            title="Clique para resetar o contador"
+            className={cn(
+              'rounded-full bg-transparent text-white transition-all duration-500',
+              hasFinished && 'bg-white text-zinc-600',
+            )}
+          >
+            <RefreshCcw className="size-4" />
+            <span className="sr-only">Resetar contador</span>
+          </Button>
+
+          {!hasFinished && (
+            <>
+              <Button
+                size="icon"
+                type="button"
+                variant="outline"
+                disabled={!isActive}
+                onClick={handlePauseCountdown}
+                title="Clique para pausar o contador"
+                className="rounded-full bg-transparent text-rose-500"
+              >
+                <SquareIcon className="size-4" />
+                <span className="sr-only">Pausar contador</span>
+              </Button>
+
+              <Button
+                size="icon"
+                type="button"
+                variant="outline"
+                disabled={isActive}
+                onClick={handleStartCountdown}
+                title="Clique para iniciar o contador"
+                className="rounded-full bg-transparent text-emerald-500"
+              >
+                <PlayIcon className="size-4" />
+                <span className="sr-only">Iniciar contador</span>
+              </Button>
+            </>
+          )}
+        </div>
+
+        <div
+          className={cn(
+            'invisible absolute -bottom-72 left-1/2 -translate-x-1/2 items-center gap-8 opacity-0 transition-all duration-500',
+            hasEdit && 'visible -bottom-20 opacity-100',
+          )}
+        >
+          <Button
+            size="icon"
+            type="button"
+            variant="outline"
+            onClick={() => setHasEdit(false)}
+            title="Clique para cancelar a edição do contador"
+            className="rounded-full bg-transparent text-emerald-500"
+          >
+            <CheckIcon className="size-4" />
+            <span className="sr-only">Cancelar edição</span>
+          </Button>
         </div>
       </div>
-
-      {/* Botões de ação */}
-      <div className="visible absolute -bottom-20 left-1/2 flex -translate-x-1/2 items-center gap-8 opacity-100 transition-all duration-500">
-        <Button size="icon" type="button" variant="outline" title="Clique para editar o contador" className="rounded-full bg-transparent text-white">
-          <PencilIcon className="size-4" />
-          <span className="sr-only">Editar contador</span>
-        </Button>
-
-        <Button size="icon" type="button" variant="outline" title="Clique para resetar o contador" className="rounded-full bg-transparent text-white transition-al duration-500">
-          <RefreshCcw className="size-4" />
-          <span className="sr-only">Resetar contador</span>
-        </Button>
-
-        <Button size="icon" type="button" variant="outline" title="Clique para pausar o contador" className="rounded-full bg-transparent text-rose-500">
-          <SquareIcon className="size-4" />
-          <span className="sr-only">Pausar contador</span>
-        </Button>
-
-        <Button size="icon" type="button" variant="outline" title="Clique para iniciar o contador" className="rounded-full bg-transparent text-emerald-500">
-          <PlayIcon className="size-4" />
-          <span className="sr-only">Iniciar contador</span>
-        </Button>
-      </div>
     </div>
-  </div>
+  )
 }
