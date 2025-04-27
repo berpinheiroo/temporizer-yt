@@ -1,28 +1,33 @@
+# Temporizer
 
-## Template Nitro HUB Frontend
+🟣 Temporizador com opções de iniciar, pausar e encerrar o tempo.
+🟣 Criado no intuito de complementar meus conhecimentos em React.
 
-🟣 Esse repositório foi criado com o objetivo de já trazer uma aplicação React totalmente configurada, para apenas realizar a troca das informações necessárias.
+## 🚀 Tecnologias Utilizadas
 
-## Instalação
+**Front-end:**
+- ReactJS
+- Vite
+- Shadcn-UI
+- TailwindCSS
 
-Instale o projeto e inicie.
+## 📦 Instalação
 
-```bash
-  npm i
-  npm run dev
-```
-    
-## Stack utilizada
+Siga os passos abaixo para instalar e iniciar o projeto:
 
-**Back-end:** ReactJS, VITE, Date-fns, Shadcn-UI, TailwindCSS
+1. Instale as dependências:
+   ```bash
+   npm install
+   ```
+
+2. Inicie o servidor de desenvolvimento:
+   ```bash
+   npm run dev
+   ```
+
+## ✍️ Autor
+
+Este projeto foi juntamente à aula do [Rafael Pereira](https://github.com/rafaelppereira).
 
 
-## Autores
-
-- [@rafaelppereira](https://www.github.com/rafaelppereira)
-
-
-## Feedback
-
-Se você tiver algum feedback, por favor nos deixe saber por meio de rafaelsantospereira03@gmail.com
 
